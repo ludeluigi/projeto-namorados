@@ -1,4 +1,4 @@
-name: Criar Infra e Fazer Deploy do Site
+name: Deploy do Site de Dia dos Namorados na AWS
 
 on:
   push:
@@ -6,43 +6,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  # Job 1: Provisionar a Infraestrutura com Terraform
-  provision-infra:
-    name: 1. Provisionar Infra (Terraform)
-    runs-on: ubuntu-latest
-
-    outputs:
-      instance_ip: ${{ steps.tf_apply.outputs.public_ip }}
-
-    steps:
-      - name: Checkout do código
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1 # Mude se sua região for outra
-
-      - name: Terraform Init
-        id: tf_init
-        run: terraform init
-        working-directory: ./terraform
-
-      - name: Terraform Apply
-        id: tf_apply
-        run: terraform apply -auto-approve
-        working-directory: ./terraform
-
-  # Job 2: Construir e enviar a imagem para o Docker Hub
+  # Job 1: Construir a imagem Docker e enviar para o Docker Hub
   build-and-push:
-    name: 2. Build e Push da Imagem
+    name: 1. Build e Push para Docker Hub
     runs-on: ubuntu-latest
-    needs: provision-infra
 
     steps:
       - name: Checkout do código
@@ -61,21 +28,31 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
 
-  # Job 3: Fazer o deploy do container na instância criada
+  # Job 2: Fazer o deploy na instância EC2
   deploy-to-aws:
-    name: 3. Deploy do Container na EC2
+    name: 2. Deploy na AWS EC2
     runs-on: ubuntu-latest
-    needs: [provision-infra, build-and-push]
+    needs: build-and-push # Depende apenas do build agora
 
     steps:
       - name: Conectar na EC2 e fazer o deploy
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ needs.provision-infra.outputs.instance_ip }}
+          host: ${{ secrets.AWS_HOST }} # USA O IP QUE VOCÊ COLOCOU NOS SEGREDOS
           username: ubuntu
           key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
           script: |
+            # Instala o Docker na instância (só fará algo na primeira vez)
+            sudo apt-get update
+            sudo apt-get install -y docker.io
+            sudo usermod -aG docker ubuntu
+
+            # Puxa a imagem mais recente do Docker Hub
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
+
+            # Para e remove a versão antiga do site, se existir
             docker stop valentine-site || true
             docker rm valentine-site || true
+
+            # Roda o novo container com o site atualizado na porta 80
             docker run -d --name valentine-site -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
