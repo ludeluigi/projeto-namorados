@@ -2,24 +2,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- LÓGICA DA PÁGINA INICIAL (index.html) ---
     const surpriseButton = document.getElementById('surpriseButton');
-    const audioIndex = document.getElementById('backgroundMusic');
-
     if (surpriseButton) {
         surpriseButton.addEventListener('click', function() {
-            // Tenta iniciar a música no primeiro clique
-            if (audioIndex) {
-                audioIndex.play().catch(e => console.error("Erro ao tocar áudio no index:", e));
-            }
-            // Redireciona para a página da surpresa
-            window.location.href = '/projeto-namorados/docs/surpresa.html';
+            // CAMINHO CORRIGIDO E SIMPLIFICADO
+            window.location.href = 'surpresa.html';
         });
     }
-
 
     // --- LÓGICA DA PÁGINA DE SURPRESA (surpresa.html) ---
     const cardDeck = document.querySelector('.card-deck');
     if (cardDeck) {
-        const audioSurpresa = document.getElementById('backgroundMusic');
+        const audio = document.getElementById('backgroundMusic');
         const cards = Array.from(cardDeck.querySelectorAll('.card'));
         const nextButton = document.getElementById('nextCard');
         const prevButton = document.getElementById('prevCard');
@@ -27,11 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
         let musicStarted = false;
 
         function playMusic() {
-            if (!musicStarted && audioSurpresa) {
-                audioSurpresa.play().catch(e => console.error("Erro ao tocar áudio na surpresa:", e));
+            if (!musicStarted && audio) {
+                audio.play().catch(e => console.log("Navegador aguardando interação para tocar música."));
                 musicStarted = true;
             }
         }
+        // Adiciona um "ouvinte" para o primeiro clique ou toque
+        document.body.addEventListener('click', playMusic, { once: true });
+        document.body.addEventListener('touchstart', playMusic, { once: true });
+
 
         function updateCards() {
             cards.forEach((card, index) => {
@@ -48,8 +45,9 @@ document.addEventListener('DOMContentLoaded', function() {
             nextButton.textContent = currentIndex === cards.length - 1 ? 'Surpresa Final ✨' : 'Próxima →';
         }
 
-        nextButton.addEventListener('click', () => {
-            playMusic(); // Garante que a música toque no primeiro clique de "próxima"
+        nextButton.addEventListener('click', (event) => {
+            event.stopPropagation(); 
+            playMusic(); 
 
             const finalCard = cards[cards.length - 1];
             const finalSurprise = finalCard.querySelector('.final-surprise');
@@ -63,8 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        prevButton.addEventListener('click', () => {
-            playMusic(); // Garante que a música toque no primeiro clique de "anterior"
+        prevButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            playMusic();
 
             const finalSurprise = cards[cards.length - 1].querySelector('.final-surprise');
             if (finalSurprise && finalSurprise.classList.contains('triggered')) {
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Inicia o baralho na primeira carta
         updateCards();
     }
 });
