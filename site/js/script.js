@@ -11,13 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Função para criar corações flutuantes
         const heartsContainer = document.querySelector('.hearts-container');
         if (heartsContainer) {
-            const heartCount = 80; // Quantidade de corações
+            const heartCount = 20; // Quantidade de corações
             for (let i = 0; i < heartCount; i++) {
                 const heart = document.createElement('div');
                 heart.classList.add('heart');
                 heart.style.left = Math.random() * 100 + 'vw';
-                heart.style.animationDuration = (Math.random() * 2 + 2) + 's'; // Duração entre 5s e 10s
-                heart.style.animationDelay = Math.random() * 2 + 's';
+                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                heart.style.animationDelay = Math.random() * 5 + 's';
                 heartsContainer.appendChild(heart);
             }
         }
@@ -27,12 +27,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- LÓGICA DA PÁGINA DE SURPRESA (surpresa.html) ---
     const cardDeck = document.querySelector('.card-deck');
     if (cardDeck) {
+        const audio = document.getElementById('backgroundMusic');
         const cards = Array.from(cardDeck.querySelectorAll('.card'));
         const nextButton = document.getElementById('nextCard');
         const prevButton = document.getElementById('prevCard');
         let currentIndex = 0;
 
+        // ---- INÍCIO DA CORREÇÃO PARA MÚSICA NO IPHONE ----
+        let musicStarted = false;
+        function playMusic() {
+            if (!musicStarted) {
+                audio.play().catch(error => {
+                    console.log("O navegador impediu o autoplay, esperando interação do usuário.", error);
+                });
+                musicStarted = true;
+                // Remove o evento de clique do corpo para não tentar tocar de novo
+                document.body.removeEventListener('click', playMusic);
+            }
+        }
+        // Adiciona um "ouvinte" para o primeiro clique em qualquer lugar da página
+        document.body.addEventListener('click', playMusic);
+        // ---- FIM DA CORREÇÃO ----
+
+
         function updateCards() {
+            // ... (o resto da função updateCards continua igual)
             cards.forEach((card, index) => {
                 card.classList.remove('active', 'gone', 'coming');
                 if (index === currentIndex) {
@@ -43,31 +62,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     card.classList.add('coming');
                 }
             });
-
             prevButton.style.display = currentIndex === 0 ? 'none' : 'inline-block';
             nextButton.textContent = currentIndex === cards.length - 1 ? 'Surpresa Final ✨' : 'Próxima →';
         }
 
         nextButton.addEventListener('click', () => {
+            // Tenta tocar a música no clique, caso ainda não tenha começado
+            playMusic(); 
+
             const finalCard = cards[cards.length - 1];
             const finalSurprise = finalCard.querySelector('.final-surprise');
 
-            // Se não estamos na última carta, avança
             if (currentIndex < cards.length - 1) {
                 currentIndex++;
                 updateCards();
-            } 
-            // Se estamos na última carta e a surpresa ainda não foi ativada
-            else if (finalSurprise && !finalSurprise.classList.contains('triggered')) {
+            } else if (finalSurprise && !finalSurprise.classList.contains('triggered')) {
                 finalSurprise.classList.add('triggered');
-                nextButton.style.display = 'none'; // Esconde o botão da surpresa
+                nextButton.style.display = 'none';
             }
         });
 
         prevButton.addEventListener('click', () => {
-            const finalSurprise = cards[cards.length - 1].querySelector('.final-surprise');
+             // Tenta tocar a música no clique, caso ainda não tenha começado
+            playMusic();
 
-            // Se a surpresa final está ativa, esconde ela e volta ao normal
+            const finalSurprise = cards[cards.length - 1].querySelector('.final-surprise');
             if (finalSurprise && finalSurprise.classList.contains('triggered')) {
                 finalSurprise.classList.remove('triggered');
                 nextButton.style.display = 'inline-block';
@@ -77,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Inicia o baralho na primeira carta
         updateCards();
     }
 });
