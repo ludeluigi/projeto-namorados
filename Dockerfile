@@ -8,7 +8,7 @@ WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 
 # Copia os arquivos do nosso site (da pasta 'site' local) para o diretório de trabalho do container
-COPY site/ .
+COPY docs/ .
 
 # Expõe a porta 80, que é a porta padrão do Nginx
 EXPOSE 80
