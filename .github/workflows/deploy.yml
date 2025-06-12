@@ -48,11 +48,11 @@ jobs:
             sudo usermod -aG docker ubuntu
 
             # Puxa a imagem mais recente do Docker Hub
-            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
 
             # Para e remove a versão antiga do site, se existir
-            docker stop valentine-site || true
-            docker rm valentine-site || true
+            sudo docker stop valentine-site || true
+            sudo docker rm valentine-site || true
 
             # Roda o novo container com o site atualizado na porta 80
-            docker run -d --name valentine-site -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
+            sudo docker run -d --name valentine-site -p 80:80 ${{ secrets.DOCKERHUB_USERNAME }}/valentine-app:latest
